@@ -140,8 +140,8 @@ fn convert_to_fsrs_items(
     next_day_starts_at: i64,
     timezone: Tz,
 ) -> Option<Vec<FSRSItem>> {
-    entries = filter_out_cram(entries);
-    entries = filter_out_manual(entries);
+    // entries = filter_out_cram(entries);
+    // entries = filter_out_manual(entries);
     entries = remove_revlog_before_last_first_learn(entries);
     entries = keep_first_revlog_same_date(entries, next_day_starts_at, timezone);
 
@@ -209,10 +209,11 @@ pub(crate) fn data_from_csv() -> Vec<FSRSItem> {
             taken_millis: r.review_duration,
             review_kind: match r.review_state {
                 0 => RevlogReviewKind::Learning,
-                1 => RevlogReviewKind::Review,
-                2 => RevlogReviewKind::Relearning,
-                3 => RevlogReviewKind::Filtered,
-                4 => RevlogReviewKind::Manual,
+                1 => RevlogReviewKind::Learning,
+                2 => RevlogReviewKind::Review,
+                3 => RevlogReviewKind::Relearning,
+                4 => RevlogReviewKind::Filtered,
+                5 => RevlogReviewKind::Manual,
                 _ => panic!("Invalid review state"),
             },
             ..Default::default()
@@ -265,6 +266,11 @@ fn read_collection() -> Result<Vec<RevlogEntry>> {
             WHERE queue != 0
             {suspended_cards_str}
             {flags_str}
+        )
+        AND ease BETWEEN 1 AND 4
+        AND (
+            type != 3
+            OR factor != 0
         )
         order by cid"
         ))?
