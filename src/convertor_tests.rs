@@ -4,12 +4,15 @@ use crate::dataset::{FSRSItem, FSRSReview};
 use crate::test_helpers::NdArrayAutodiff;
 use burn::backend::ndarray::NdArrayDevice;
 use burn::data::dataloader::batcher::Batcher;
+use burn::data::dataloader::Dataset;
+use burn::data::dataset::InMemDataset;
 use burn::tensor::Data;
 use chrono::prelude::*;
 use chrono_tz::Tz;
 use itertools::Itertools;
 use rusqlite::Connection;
 use rusqlite::{Result, Row};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RevlogEntry {
@@ -181,6 +184,44 @@ pub(crate) fn anki_to_fsrs(revlogs: Vec<RevlogEntry>) -> Vec<FSRSItem> {
         .collect_vec();
     revlogs.sort_by_cached_key(|r| r.reviews.len());
     revlogs
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RevlogCsv {
+    // card_id,review_time,review_rating,review_state,review_duration
+    pub card_id: i64,
+    pub review_time: i64,
+    pub review_rating: u32,
+    pub review_state: u32,
+    pub review_duration: u32,
+}
+
+pub(crate) fn data_from_csv() -> Vec<FSRSItem> {
+    const CSV_FILE: &str = "tests/data/revlog.csv";
+    let rdr = csv::ReaderBuilder::new();
+    let dataset = InMemDataset::<RevlogCsv>::from_csv(CSV_FILE, &rdr).unwrap();
+    let revlogs: Vec<RevlogEntry> = dataset
+        .iter()
+        .map(|r| RevlogEntry {
+            id: r.review_time,
+            cid: r.card_id,
+            button_chosen: r.review_rating as u8,
+            taken_millis: r.review_duration,
+            review_kind: match r.review_state {
+                0 => RevlogReviewKind::Learning,
+                1 => RevlogReviewKind::Review,
+                2 => RevlogReviewKind::Relearning,
+                3 => RevlogReviewKind::Filtered,
+                4 => RevlogReviewKind::Manual,
+                _ => panic!("Invalid review state"),
+            },
+            ..Default::default()
+        })
+        .collect();
+    dbg!(revlogs.len());
+    let fsrs_items = anki_to_fsrs(revlogs);
+    dbg!(fsrs_items.len());
+    fsrs_items
 }
 
 pub(crate) fn anki21_sample_file_converted_to_fsrs() -> Vec<FSRSItem> {

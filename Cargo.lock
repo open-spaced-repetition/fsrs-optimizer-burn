@@ -1061,6 +1061,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "criterion",
+ "csv",
  "fern",
  "itertools 0.12.1",
  "log",
