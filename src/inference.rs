@@ -18,6 +18,8 @@ pub(crate) const DECAY: f64 = -0.5;
 pub(crate) const FACTOR: f64 = 19f64 / 81f64;
 pub(crate) const S_MIN: f32 = 0.01;
 pub(crate) const S_MAX: f32 = 36500.0;
+pub(crate) const D_MIN: f32 = 1.0;
+pub(crate) const D_MAX: f32 = 10.0;
 /// This is a slice for efficiency, but should always be 17 in length.
 pub type Parameters = [f32];
 use itertools::izip;
@@ -130,7 +132,7 @@ impl<B: Backend> FSRS<B> {
         } else {
             Ok(MemoryState {
                 stability,
-                difficulty: difficulty.clamp(1.0, 10.0),
+                difficulty: difficulty.clamp(D_MIN, D_MAX),
             })
         }
     }
@@ -494,7 +496,7 @@ mod tests {
         ]))?;
         let metrics = fsrs.evaluate(items.clone(), |_| true).unwrap();
 
-        assert_approx_eq([metrics.log_loss, metrics.rmse_bins], [0.211007, 0.037216]);
+        assert_approx_eq([metrics.log_loss, metrics.rmse_bins], [0.208547, 0.035522]);
 
         let fsrs = FSRS::new(Some(&[]))?;
         let metrics = fsrs.evaluate(items.clone(), |_| true).unwrap();

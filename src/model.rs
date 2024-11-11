@@ -1,5 +1,5 @@
 use crate::error::{FSRSError, Result};
-use crate::inference::{Parameters, DECAY, FACTOR, S_MAX, S_MIN};
+use crate::inference::{Parameters, DECAY, D_MAX, D_MIN, FACTOR, S_MAX, S_MIN};
 use crate::parameter_clipper::clip_parameters;
 use crate::DEFAULT_PARAMETERS;
 use burn::backend::ndarray::NdArrayDevice;
@@ -100,20 +100,20 @@ impl<B: Backend> Model<B> {
     }
 
     fn stability_short_term(&self, last_s: Tensor<B, 1>, rating: Tensor<B, 1>) -> Tensor<B, 1> {
-        last_s * (self.w.get(17) * (rating - 3 + self.w.get(18))).exp()
+        (last_s * (self.w.get(17) * (rating - 3 + self.w.get(18))).exp()).clamp(S_MIN, S_MAX)
     }
 
     fn mean_reversion(&self, new_d: Tensor<B, 1>) -> Tensor<B, 1> {
         let rating = Tensor::from_floats([4.0], &B::Device::default());
-        self.w.get(7) * (self.init_difficulty(rating) - new_d.clone()) + new_d
+        (self.w.get(7) * (self.init_difficulty(rating) - new_d.clone()) + new_d).clamp(D_MIN, D_MAX)
     }
 
     pub(crate) fn init_stability(&self, rating: Tensor<B, 1>) -> Tensor<B, 1> {
-        self.w.val().select(0, rating.int() - 1)
+        (self.w.val().select(0, rating.int() - 1)).clamp(S_MIN, S_MAX)
     }
 
     fn init_difficulty(&self, rating: Tensor<B, 1>) -> Tensor<B, 1> {
-        self.w.get(4) - (self.w.get(5) * (rating - 1)).exp() + 1
+        (self.w.get(4) - (self.w.get(5) * (rating - 1)).exp() + 1).clamp(D_MIN, D_MAX)
     }
 
     fn linear_damping(&self, delta_d: Tensor<B, 1>, old_d: Tensor<B, 1>) -> Tensor<B, 1> {
@@ -122,7 +122,7 @@ impl<B: Backend> Model<B> {
 
     fn next_difficulty(&self, difficulty: Tensor<B, 1>, rating: Tensor<B, 1>) -> Tensor<B, 1> {
         let delta_d = -self.w.get(6) * (rating - 3);
-        difficulty.clone() + self.linear_damping(delta_d, difficulty)
+        (difficulty.clone() + self.linear_damping(delta_d, difficulty)).clamp(D_MIN, D_MAX)
     }
 
     pub(crate) fn step(
@@ -151,7 +151,7 @@ impl<B: Backend> Model<B> {
             new_stability = new_stability.mask_where(delta_t.equal_elem(0), stability_short_term);
 
             let mut new_difficulty = self.next_difficulty(state.difficulty.clone(), rating.clone());
-            new_difficulty = self.mean_reversion(new_difficulty).clamp(1.0, 10.0);
+            new_difficulty = self.mean_reversion(new_difficulty);
             // mask padding zeros for rating
             new_stability = new_stability.mask_where(rating.clone().equal_elem(0), state.stability);
             new_difficulty = new_difficulty.mask_where(rating.equal_elem(0), state.difficulty);
@@ -159,7 +159,7 @@ impl<B: Backend> Model<B> {
         } else {
             (
                 self.init_stability(rating.clone()),
-                self.init_difficulty(rating).clamp(1.0, 10.0),
+                self.init_difficulty(rating),
             )
         };
         MemoryStateTensors {

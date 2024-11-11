@@ -1,5 +1,7 @@
 use crate::error::{FSRSError, Result};
-use crate::inference::{next_interval, ItemProgress, Parameters, DECAY, FACTOR, S_MAX, S_MIN};
+use crate::inference::{
+    next_interval, ItemProgress, Parameters, DECAY, D_MAX, D_MIN, FACTOR, S_MAX, S_MIN,
+};
 use crate::model::check_and_fill_parameters;
 use crate::parameter_clipper::clip_parameters;
 use crate::FSRS;
@@ -91,12 +93,12 @@ fn stability_short_term(w: &[f32], s: f32, rating_offset: f32, session_len: f32)
 }
 
 fn init_d(w: &[f32], rating: usize) -> f32 {
-    w[4] - (w[5] * (rating - 1) as f32).exp() + 1.0
+    (w[4] - (w[5] * (rating - 1) as f32).exp() + 1.0).clamp(D_MIN, D_MAX)
 }
 
 fn init_d_with_short_term(w: &[f32], rating: usize, rating_offset: f32) -> f32 {
     let new_d = init_d(w, rating) - w[6] * rating_offset;
-    new_d.clamp(1.0, 10.0)
+    new_d.clamp(D_MIN, D_MAX)
 }
 
 fn linear_damping(delta_d: f32, old_d: f32) -> f32 {
@@ -106,11 +108,11 @@ fn linear_damping(delta_d: f32, old_d: f32) -> f32 {
 fn next_d(w: &[f32], d: f32, rating: usize) -> f32 {
     let delta_d = -w[6] * (rating as f32 - 3.0);
     let new_d = d + linear_damping(delta_d, d);
-    mean_reversion(w, init_d(w, 4), new_d).clamp(1.0, 10.0)
+    mean_reversion(w, init_d(w, 4), new_d)
 }
 
 fn mean_reversion(w: &[f32], init: f32, current: f32) -> f32 {
-    w[7] * init + (1.0 - w[7]) * current
+    (w[7] * init + (1.0 - w[7]) * current).clamp(D_MIN, D_MAX)
 }
 
 fn power_forgetting_curve(t: f32, s: f32) -> f32 {
@@ -287,7 +289,7 @@ pub fn simulate(
             // Update difficulty for review cards
             card.difficulty = next_d(w, card.difficulty, rating);
             if rating == 1 {
-                card.difficulty -= (w[6] * forget_rating_offset).clamp(1.0, 10.0);
+                card.difficulty -= (w[6] * forget_rating_offset).clamp(D_MIN, D_MAX);
             }
 
             let cost = if forget {

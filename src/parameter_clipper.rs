@@ -1,5 +1,5 @@
 use crate::{
-    inference::{Parameters, S_MIN},
+    inference::{Parameters, D_MAX, D_MIN, S_MIN},
     pre_training::INIT_S_MAX,
 };
 use burn::{
@@ -29,7 +29,7 @@ pub(crate) fn clip_parameters(parameters: &Parameters) -> Vec<f32> {
         (S_MIN, INIT_S_MAX),
         (S_MIN, INIT_S_MAX),
         (S_MIN, INIT_S_MAX),
-        (1.0, 10.0),
+        (D_MIN, D_MAX),
         (0.001, 4.0),
         (0.001, 4.0),
         (0.001, 0.75),
