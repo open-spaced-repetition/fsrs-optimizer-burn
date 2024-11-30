@@ -1,7 +1,7 @@
+use crate::DEFAULT_PARAMETERS;
+use crate::FSRSItem;
 use crate::error::{FSRSError, Result};
 use crate::inference::{DECAY, FACTOR, S_MIN};
-use crate::FSRSItem;
-use crate::DEFAULT_PARAMETERS;
 use ndarray::Array1;
 use std::collections::HashMap;
 
@@ -311,36 +311,33 @@ mod tests {
     #[test]
     fn test_search_parameters() {
         let first_rating = 1;
-        let pretrainset = HashMap::from([(
-            first_rating,
-            vec![
-                AverageRecall {
-                    delta_t: 1.0,
-                    recall: 0.86666667,
-                    count: 435.0,
-                },
-                AverageRecall {
-                    delta_t: 2.0,
-                    recall: 0.90721649,
-                    count: 97.0,
-                },
-                AverageRecall {
-                    delta_t: 3.0,
-                    recall: 0.73015873,
-                    count: 63.0,
-                },
-                AverageRecall {
-                    delta_t: 4.0,
-                    recall: 0.76315789,
-                    count: 38.0,
-                },
-                AverageRecall {
-                    delta_t: 5.0,
-                    recall: 0.67857143,
-                    count: 28.0,
-                },
-            ],
-        )]);
+        let pretrainset = HashMap::from([(first_rating, vec![
+            AverageRecall {
+                delta_t: 1.0,
+                recall: 0.86666667,
+                count: 435.0,
+            },
+            AverageRecall {
+                delta_t: 2.0,
+                recall: 0.90721649,
+                count: 97.0,
+            },
+            AverageRecall {
+                delta_t: 3.0,
+                recall: 0.73015873,
+                count: 63.0,
+            },
+            AverageRecall {
+                delta_t: 4.0,
+                recall: 0.76315789,
+                count: 38.0,
+            },
+            AverageRecall {
+                delta_t: 5.0,
+                recall: 0.67857143,
+                count: 28.0,
+            },
+        ])]);
         let actual = search_parameters(pretrainset, 0.943_028_57);
         Data::from([*actual.get(&first_rating).unwrap()])
             .assert_approx_eq(&Data::from([0.908_688]), 6);

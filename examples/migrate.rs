@@ -1,4 +1,4 @@
-use fsrs::{FSRSItem, FSRSReview, FSRS};
+use fsrs::{FSRS, FSRSItem, FSRSReview};
 
 fn migrate_with_full_history() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new FSRS model

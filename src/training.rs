@@ -1,11 +1,11 @@
 use crate::batch_shuffle::{BatchTensorDataset, ShuffleDataLoader};
 use crate::cosine_annealing::CosineAnnealingLR;
-use crate::dataset::{prepare_training_data, FSRSDataset, FSRSItem};
+use crate::dataset::{FSRSDataset, FSRSItem, prepare_training_data};
 use crate::error::Result;
 use crate::model::{Model, ModelConfig};
 use crate::parameter_clipper::parameter_clipper;
 use crate::pre_training::{pretrain, smooth_and_fill};
-use crate::{FSRSError, DEFAULT_PARAMETERS, FSRS};
+use crate::{DEFAULT_PARAMETERS, FSRS, FSRSError};
 use burn::backend::Autodiff;
 
 use burn::lr_scheduler::LrScheduler;
@@ -15,8 +15,8 @@ use burn::optim::Optimizer;
 use burn::optim::{AdamConfig, GradientsParams};
 use burn::tensor::backend::Backend;
 use burn::tensor::{Int, Tensor};
-use burn::train::renderer::{MetricState, MetricsRenderer, TrainingProgress};
 use burn::train::TrainingInterrupter;
+use burn::train::renderer::{MetricState, MetricsRenderer, TrainingProgress};
 use burn::{config::Config, tensor::backend::AutodiffBackend};
 use core::marker::PhantomData;
 use log::info;
@@ -215,9 +215,8 @@ impl<B: Backend> FSRS<B> {
         }
 
         let (initial_stability, initial_rating_count) =
-            pretrain(pre_train_set.clone(), average_recall).map_err(|e| {
+            pretrain(pre_train_set.clone(), average_recall).inspect_err(|_e| {
                 finish_progress();
-                e
             })?;
         let pretrained_parameters: Vec<f32> = initial_stability
             .into_iter()
@@ -256,9 +255,8 @@ impl<B: Backend> FSRS<B> {
         );
 
         let optimized_parameters = model
-            .map_err(|e| {
+            .inspect_err(|_e| {
                 finish_progress();
-                e
             })?
             .w
             .val()

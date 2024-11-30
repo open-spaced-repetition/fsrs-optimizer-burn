@@ -4,13 +4,13 @@
 use std::hint::black_box;
 use std::iter::repeat;
 
+use criterion::Criterion;
 use criterion::criterion_group;
 use criterion::criterion_main;
-use criterion::Criterion;
+use fsrs::FSRS;
 use fsrs::FSRSReview;
 use fsrs::NextStates;
 use fsrs::SimulatorConfig;
-use fsrs::FSRS;
 use fsrs::{FSRSItem, MemoryState};
 use itertools::Itertools;
 

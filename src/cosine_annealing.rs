@@ -1,4 +1,4 @@
-use burn::{lr_scheduler::LrScheduler, tensor::backend::Backend, LearningRate};
+use burn::{LearningRate, lr_scheduler::LrScheduler, tensor::backend::Backend};
 #[derive(Clone, Debug)]
 pub(crate) struct CosineAnnealingLR {
     t_max: f64,

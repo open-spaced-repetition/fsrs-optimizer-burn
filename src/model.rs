@@ -1,13 +1,13 @@
-use crate::error::{FSRSError, Result};
-use crate::inference::{Parameters, DECAY, FACTOR, S_MAX, S_MIN};
-use crate::parameter_clipper::clip_parameters;
 use crate::DEFAULT_PARAMETERS;
-use burn::backend::ndarray::NdArrayDevice;
+use crate::error::{FSRSError, Result};
+use crate::inference::{DECAY, FACTOR, Parameters, S_MAX, S_MIN};
+use crate::parameter_clipper::clip_parameters;
 use burn::backend::NdArray;
+use burn::backend::ndarray::NdArrayDevice;
 use burn::{
     config::Config,
     module::{Module, Param},
-    tensor::{backend::Backend, Data, Shape, Tensor},
+    tensor::{Data, Shape, Tensor, backend::Backend},
 };
 
 #[derive(Module, Debug)]
@@ -301,13 +301,10 @@ mod tests {
             0.29, 2.61,
         ];
         let fsrs5_param = check_and_fill_parameters(&fsrs4dot5_param).unwrap();
-        assert_eq!(
-            fsrs5_param,
-            vec![
-                0.4, 0.6, 2.4, 5.8, 6.81, 0.44675013, 1.36, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05,
-                0.34, 1.26, 0.29, 2.61, 0.0, 0.0,
-            ]
-        )
+        assert_eq!(fsrs5_param, vec![
+            0.4, 0.6, 2.4, 5.8, 6.81, 0.44675013, 1.36, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34,
+            1.26, 0.29, 2.61, 0.0, 0.0,
+        ])
     }
 
     #[test]
@@ -366,17 +363,15 @@ mod tests {
         let device = NdArrayDevice::Cpu;
         let model = Model::new(ModelConfig::default());
         let delta_ts = Tensor::from_floats(
-            [
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [1.0, 1.0, 1.0, 1.0, 2.0, 2.0],
-            ],
+            [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [
+                1.0, 1.0, 1.0, 1.0, 2.0, 2.0,
+            ]],
             &device,
         );
         let ratings = Tensor::from_floats(
-            [
-                [1.0, 2.0, 3.0, 4.0, 1.0, 2.0],
-                [1.0, 2.0, 3.0, 4.0, 1.0, 2.0],
-            ],
+            [[1.0, 2.0, 3.0, 4.0, 1.0, 2.0], [
+                1.0, 2.0, 3.0, 4.0, 1.0, 2.0,
+            ]],
             &device,
         );
         let state = model.forward(delta_ts, ratings, None);

@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use fsrs::{FSRSItem, FSRSReview, DEFAULT_PARAMETERS, FSRS};
+use fsrs::{DEFAULT_PARAMETERS, FSRS, FSRSItem, FSRSReview};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create review histories for cards
