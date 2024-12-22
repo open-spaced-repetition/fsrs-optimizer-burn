@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use burn::data::dataloader::batcher::Batcher;
 use burn::{
     data::dataset::Dataset,
-    tensor::{backend::Backend, Data, ElementConversion, Float, Int, Shape, Tensor},
+    tensor::{Data, ElementConversion, Float, Int, Shape, Tensor, backend::Backend},
 };
 
 use itertools::Itertools;
@@ -107,22 +107,16 @@ impl<B: Backend> Batcher<FSRSItem, FSRSBatch<B>> for FSRSBatcher<B> {
                 delta_t.resize(pad_size, 0);
                 rating.resize(pad_size, 0);
                 let delta_t = Tensor::from_data(
-                    Data::new(
-                        delta_t,
-                        Shape {
-                            dims: [1, pad_size],
-                        },
-                    )
+                    Data::new(delta_t, Shape {
+                        dims: [1, pad_size],
+                    })
                     .convert(),
                     &self.device,
                 );
                 let rating = Tensor::from_data(
-                    Data::new(
-                        rating,
-                        Shape {
-                            dims: [1, pad_size],
-                        },
-                    )
+                    Data::new(rating, Shape {
+                        dims: [1, pad_size],
+                    })
                     .convert(),
                     &self.device,
                 );
@@ -262,21 +256,18 @@ mod tests {
         use burn::data::dataloader::Dataset;
 
         let dataset = FSRSDataset::from(anki21_sample_file_converted_to_fsrs());
-        assert_eq!(
-            dataset.get(704).unwrap(),
-            FSRSItem {
-                reviews: vec![
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 0,
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 1,
-                    },
-                ],
-            }
-        );
+        assert_eq!(dataset.get(704).unwrap(), FSRSItem {
+            reviews: vec![
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 0,
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 1,
+                },
+            ],
+        });
 
         use burn::backend::ndarray::NdArrayDevice;
         let device = NdArrayDevice::Cpu;
@@ -300,8 +291,8 @@ mod tests {
 
     #[test]
     fn batcher() {
-        use burn::backend::ndarray::NdArrayDevice;
         use burn::backend::NdArray;
+        use burn::backend::ndarray::NdArrayDevice;
         type Backend = NdArray<f32>;
         let device = NdArrayDevice::Cpu;
         let batcher = FSRSBatcher::<Backend>::new(device);

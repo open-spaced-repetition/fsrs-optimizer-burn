@@ -1,15 +1,15 @@
+use crate::FSRS;
 use crate::error::{FSRSError, Result};
-use crate::inference::{next_interval, ItemProgress, Parameters, DECAY, FACTOR, S_MAX, S_MIN};
+use crate::inference::{DECAY, FACTOR, ItemProgress, Parameters, S_MAX, S_MIN, next_interval};
 use crate::model::check_and_fill_parameters;
 use crate::parameter_clipper::clip_parameters;
-use crate::FSRS;
 use burn::tensor::backend::Backend;
-use itertools::{izip, Itertools};
+use itertools::{Itertools, izip};
 use ndarray::Array1;
 use ndarray_rand::rand_distr::Distribution;
 use priority_queue::PriorityQueue;
 use rand::Rng;
-use rand::{distributions::WeightedIndex, rngs::StdRng, SeedableRng};
+use rand::{SeedableRng, distributions::WeightedIndex, rngs::StdRng};
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use std::cmp::min;
@@ -906,7 +906,7 @@ pub fn extract_simulator_config(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{convertor_tests::read_collection, DEFAULT_PARAMETERS};
+    use crate::{DEFAULT_PARAMETERS, convertor_tests::read_collection};
 
     #[test]
     fn simulator() -> Result<()> {
@@ -1029,17 +1029,14 @@ mod tests {
             ..Default::default()
         };
         let results = simulate(&config, &DEFAULT_PARAMETERS, 0.9, None, None)?;
-        assert_eq!(
-            results.1.to_vec(),
-            vec![
-                0, 16, 25, 34, 60, 65, 76, 85, 91, 92, 100, 103, 119, 107, 103, 113, 122, 143, 149,
-                151, 148, 172, 154, 175, 156, 169, 155, 191, 185, 170
-            ]
-        );
-        assert_eq!(
-            results.2.to_vec(),
-            vec![config.learn_limit; config.learn_span]
-        );
+        assert_eq!(results.1.to_vec(), vec![
+            0, 16, 25, 34, 60, 65, 76, 85, 91, 92, 100, 103, 119, 107, 103, 113, 122, 143, 149,
+            151, 148, 172, 154, 175, 156, 169, 155, 191, 185, 170
+        ]);
+        assert_eq!(results.2.to_vec(), vec![
+            config.learn_limit;
+            config.learn_span
+        ]);
         Ok(())
     }
 
@@ -1133,36 +1130,30 @@ mod tests {
         revlogs.sort_by_cached_key(|r| (r.cid, r.id));
         let day_cutoff = 1720900800;
         let simulator_config = extract_simulator_config(revlogs.clone(), day_cutoff, false);
-        assert_eq!(
-            simulator_config,
-            SimulatorConfig {
-                learn_costs: [30.061, 0., 17.298, 12.352],
-                review_costs: [19.139, 6.887, 5.83, 4.002],
-                first_rating_prob: [0.19349411, 0., 0.14357824, 0.662_927_6],
-                review_rating_prob: [0.07351815, 0.9011334, 0.025348445],
-                first_rating_offsets: [1.64, 0., 0.69, 0.],
-                first_session_lens: [2.74, 0., 1.32, 0.],
-                forget_rating_offset: 1.28,
-                forget_session_len: 1.77,
-                ..Default::default()
-            }
-        );
+        assert_eq!(simulator_config, SimulatorConfig {
+            learn_costs: [30.061, 0., 17.298, 12.352],
+            review_costs: [19.139, 6.887, 5.83, 4.002],
+            first_rating_prob: [0.19349411, 0., 0.14357824, 0.662_927_6],
+            review_rating_prob: [0.07351815, 0.9011334, 0.025348445],
+            first_rating_offsets: [1.64, 0., 0.69, 0.],
+            first_session_lens: [2.74, 0., 1.32, 0.],
+            forget_rating_offset: 1.28,
+            forget_session_len: 1.77,
+            ..Default::default()
+        });
 
         let simulator_config = extract_simulator_config(revlogs, day_cutoff, true);
-        assert_eq!(
-            simulator_config,
-            SimulatorConfig {
-                learn_costs: [30.31, 24.3, 16.98, 12.23],
-                review_costs: [19.37, 7.12, 5.84, 4.21],
-                first_rating_prob: [0.19413717, 0.0012997796, 0.1484375, 0.65612555],
-                review_rating_prob: [0.07409216, 0.900103, 0.025804851],
-                first_rating_offsets: [1.48, -0.15, 0.63, 0.],
-                first_session_lens: [2.69, 1.28, 1.27, 0.],
-                forget_rating_offset: 1.19,
-                forget_session_len: 1.73,
-                ..Default::default()
-            }
-        );
+        assert_eq!(simulator_config, SimulatorConfig {
+            learn_costs: [30.31, 24.3, 16.98, 12.23],
+            review_costs: [19.37, 7.12, 5.84, 4.21],
+            first_rating_prob: [0.19413717, 0.0012997796, 0.1484375, 0.65612555],
+            review_rating_prob: [0.07409216, 0.900103, 0.025804851],
+            first_rating_offsets: [1.48, -0.15, 0.63, 0.],
+            first_session_lens: [2.69, 1.28, 1.27, 0.],
+            forget_rating_offset: 1.19,
+            forget_session_len: 1.73,
+            ..Default::default()
+        });
     }
 
     #[test]

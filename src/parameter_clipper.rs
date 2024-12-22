@@ -4,7 +4,7 @@ use crate::{
 };
 use burn::{
     module::Param,
-    tensor::{backend::Backend, Data, Tensor},
+    tensor::{Data, Tensor, backend::Backend},
 };
 
 pub(crate) fn parameter_clipper<B: Backend>(
@@ -71,9 +71,8 @@ mod tests {
         let param = parameter_clipper(Param::from_tensor(tensor));
         let values = &param.to_data().value;
 
-        assert_eq!(
-            values,
-            &[0.01, 0.01, 100.0, 0.01, 10.0, 0.001, 1.0, 0.25, 0.0]
-        );
+        assert_eq!(values, &[
+            0.01, 0.01, 100.0, 0.01, 10.0, 0.001, 1.0, 0.25, 0.0
+        ]);
     }
 }

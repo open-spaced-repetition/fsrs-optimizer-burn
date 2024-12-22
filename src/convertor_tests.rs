@@ -4,8 +4,8 @@ use crate::dataset::{FSRSItem, FSRSReview};
 use crate::optimal_retention::{RevlogEntry, RevlogReviewKind};
 use crate::test_helpers::NdArrayAutodiff;
 use burn::backend::ndarray::NdArrayDevice;
-use burn::data::dataloader::batcher::Batcher;
 use burn::data::dataloader::Dataset;
+use burn::data::dataloader::batcher::Batcher;
 use burn::data::dataset::InMemDataset;
 use burn::tensor::Data;
 use chrono::prelude::*;
@@ -239,11 +239,13 @@ pub(crate) fn read_collection() -> Result<Vec<RevlogEntry>> {
 #[test]
 fn conversion_works() {
     let revlogs = read_collection().unwrap();
-    let single_card_revlog = vec![revlogs
-        .iter()
-        .filter(|r| r.cid == 1528947214762)
-        .cloned()
-        .collect_vec()];
+    let single_card_revlog = vec![
+        revlogs
+            .iter()
+            .filter(|r| r.cid == 1528947214762)
+            .cloned()
+            .collect_vec(),
+    ];
     assert_eq!(revlogs.len(), 24394);
     let fsrs_items = anki_to_fsrs(revlogs);
     assert_eq!(fsrs_items.len(), 14290);
@@ -261,131 +263,128 @@ fn conversion_works() {
         .filter_map(|entries| convert_to_fsrs_items(entries, 4, Tz::Asia__Shanghai))
         .flatten()
         .collect_vec();
-    assert_eq!(
-        fsrs_items,
-        [
-            FSRSItem {
-                reviews: vec![
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 4,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 5
-                    }
-                ]
-            },
-            FSRSItem {
-                reviews: vec![
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 4,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 5
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 10
-                    }
-                ]
-            },
-            FSRSItem {
-                reviews: vec![
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 4,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 5
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 10
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 22
-                    }
-                ]
-            },
-            FSRSItem {
-                reviews: vec![
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 4,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 5
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 10
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 22
-                    },
-                    FSRSReview {
-                        rating: 2,
-                        delta_t: 56
-                    }
-                ]
-            },
-            FSRSItem {
-                reviews: vec![
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 4,
-                        delta_t: 0
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 5
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 10
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 22
-                    },
-                    FSRSReview {
-                        rating: 2,
-                        delta_t: 56
-                    },
-                    FSRSReview {
-                        rating: 3,
-                        delta_t: 64
-                    }
-                ]
-            }
-        ]
-    );
+    assert_eq!(fsrs_items, [
+        FSRSItem {
+            reviews: vec![
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 4,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 5
+                }
+            ]
+        },
+        FSRSItem {
+            reviews: vec![
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 4,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 5
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 10
+                }
+            ]
+        },
+        FSRSItem {
+            reviews: vec![
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 4,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 5
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 10
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 22
+                }
+            ]
+        },
+        FSRSItem {
+            reviews: vec![
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 4,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 5
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 10
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 22
+                },
+                FSRSReview {
+                    rating: 2,
+                    delta_t: 56
+                }
+            ]
+        },
+        FSRSItem {
+            reviews: vec![
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 4,
+                    delta_t: 0
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 5
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 10
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 22
+                },
+                FSRSReview {
+                    rating: 2,
+                    delta_t: 56
+                },
+                FSRSReview {
+                    rating: 3,
+                    delta_t: 64
+                }
+            ]
+        }
+    ]);
 
     let device = NdArrayDevice::Cpu;
     let batcher = FSRSBatcher::<NdArrayAutodiff>::new(device);
@@ -405,21 +404,18 @@ fn conversion_works() {
 #[test]
 fn ordering_of_inputs_should_not_change() {
     let revlogs = anki21_sample_file_converted_to_fsrs();
-    assert_eq!(
-        revlogs[0],
-        FSRSItem {
-            reviews: vec![
-                FSRSReview {
-                    rating: 4,
-                    delta_t: 0
-                },
-                FSRSReview {
-                    rating: 3,
-                    delta_t: 3
-                }
-            ]
-        }
-    );
+    assert_eq!(revlogs[0], FSRSItem {
+        reviews: vec![
+            FSRSReview {
+                rating: 4,
+                delta_t: 0
+            },
+            FSRSReview {
+                rating: 3,
+                delta_t: 3
+            }
+        ]
+    });
 }
 
 const NEXT_DAY_AT: i64 = 86400 * 100;
@@ -572,44 +568,41 @@ fn test_filter_out_cram() {
         },
     ];
     let revlog_vec = filter_out_cram(revlog_vec);
-    assert_eq!(
-        revlog_vec,
-        vec![
-            RevlogEntry {
-                id: 1581372672843,
-                cid: 1559078645460,
-                usn: 5212,
-                button_chosen: 1,
-                interval: -60,
-                last_interval: -60,
-                ease_factor: 0,
-                taken_millis: 38942,
-                review_kind: Learning,
-            },
-            RevlogEntry {
-                id: 1694423345134,
-                cid: 1559078645460,
-                usn: 12394,
-                button_chosen: 3,
-                interval: 131,
-                last_interval: 73,
-                ease_factor: 1750,
-                taken_millis: 30443,
-                review_kind: Review,
-            },
-            RevlogEntry {
-                id: 1694423345134,
-                cid: 1559078645460,
-                usn: 12394,
-                button_chosen: 3,
-                interval: 131,
-                last_interval: 73,
-                ease_factor: 1750,
-                taken_millis: 30443,
-                review_kind: Review,
-            },
-        ]
-    );
+    assert_eq!(revlog_vec, vec![
+        RevlogEntry {
+            id: 1581372672843,
+            cid: 1559078645460,
+            usn: 5212,
+            button_chosen: 1,
+            interval: -60,
+            last_interval: -60,
+            ease_factor: 0,
+            taken_millis: 38942,
+            review_kind: Learning,
+        },
+        RevlogEntry {
+            id: 1694423345134,
+            cid: 1559078645460,
+            usn: 12394,
+            button_chosen: 3,
+            interval: 131,
+            last_interval: 73,
+            ease_factor: 1750,
+            taken_millis: 30443,
+            review_kind: Review,
+        },
+        RevlogEntry {
+            id: 1694423345134,
+            cid: 1559078645460,
+            usn: 12394,
+            button_chosen: 3,
+            interval: 131,
+            last_interval: 73,
+            ease_factor: 1750,
+            taken_millis: 30443,
+            review_kind: Review,
+        },
+    ]);
 }
 
 #[test]
@@ -661,44 +654,41 @@ fn test_filter_out_manual() {
         },
     ];
     let revlog_vec = filter_out_manual(revlog_vec);
-    assert_eq!(
-        revlog_vec,
-        vec![
-            RevlogEntry {
-                id: 1581544939407,
-                cid: 1559457421654,
-                usn: 5226,
-                button_chosen: 3,
-                interval: -600,
-                last_interval: -60,
-                ease_factor: 0,
-                taken_millis: 6979,
-                review_kind: Learning,
-            },
-            RevlogEntry {
-                id: 1581545802767,
-                cid: 1559457421654,
-                usn: 5226,
-                button_chosen: 3,
-                interval: 1,
-                last_interval: -600,
-                ease_factor: 2500,
-                taken_millis: 21297,
-                review_kind: Learning,
-            },
-            RevlogEntry {
-                id: 1582012577455,
-                cid: 1559457421654,
-                usn: 11054,
-                button_chosen: 3,
-                interval: 270,
-                last_interval: 161,
-                ease_factor: 2150,
-                taken_millis: 31190,
-                review_kind: Review,
-            },
-        ]
-    );
+    assert_eq!(revlog_vec, vec![
+        RevlogEntry {
+            id: 1581544939407,
+            cid: 1559457421654,
+            usn: 5226,
+            button_chosen: 3,
+            interval: -600,
+            last_interval: -60,
+            ease_factor: 0,
+            taken_millis: 6979,
+            review_kind: Learning,
+        },
+        RevlogEntry {
+            id: 1581545802767,
+            cid: 1559457421654,
+            usn: 5226,
+            button_chosen: 3,
+            interval: 1,
+            last_interval: -600,
+            ease_factor: 2500,
+            taken_millis: 21297,
+            review_kind: Learning,
+        },
+        RevlogEntry {
+            id: 1582012577455,
+            cid: 1559457421654,
+            usn: 11054,
+            button_chosen: 3,
+            interval: 270,
+            last_interval: 161,
+            ease_factor: 2150,
+            taken_millis: 31190,
+            review_kind: Review,
+        },
+    ]);
 }
 
 #[test]
@@ -762,44 +752,41 @@ fn test_remove_revlog_before_last_first_learn() {
     ];
     let revlog_vec = remove_revlog_before_last_first_learn(revlog_vec);
     // dbg!(&revlog_vec);
-    assert_eq!(
-        revlog_vec,
-        vec![
-            RevlogEntry {
-                id: 1601346317001,
-                cid: 1249409627511,
-                usn: 6235,
-                button_chosen: 2,
-                interval: -330,
-                last_interval: -60,
-                ease_factor: 2500,
-                taken_millis: 36376,
-                review_kind: Learning,
-            },
-            RevlogEntry {
-                id: 1601346783928,
-                cid: 1249409627511,
-                usn: 6235,
-                button_chosen: 3,
-                interval: -600,
-                last_interval: -60,
-                ease_factor: 2500,
-                taken_millis: 16249,
-                review_kind: Learning,
-            },
-            RevlogEntry {
-                id: 1601349355546,
-                cid: 1249409627511,
-                usn: 6235,
-                button_chosen: 3,
-                interval: 1,
-                last_interval: -600,
-                ease_factor: 2500,
-                taken_millis: 13272,
-                review_kind: Learning,
-            },
-        ]
-    );
+    assert_eq!(revlog_vec, vec![
+        RevlogEntry {
+            id: 1601346317001,
+            cid: 1249409627511,
+            usn: 6235,
+            button_chosen: 2,
+            interval: -330,
+            last_interval: -60,
+            ease_factor: 2500,
+            taken_millis: 36376,
+            review_kind: Learning,
+        },
+        RevlogEntry {
+            id: 1601346783928,
+            cid: 1249409627511,
+            usn: 6235,
+            button_chosen: 3,
+            interval: -600,
+            last_interval: -60,
+            ease_factor: 2500,
+            taken_millis: 16249,
+            review_kind: Learning,
+        },
+        RevlogEntry {
+            id: 1601349355546,
+            cid: 1249409627511,
+            usn: 6235,
+            button_chosen: 3,
+            interval: 1,
+            last_interval: -600,
+            ease_factor: 2500,
+            taken_millis: 13272,
+            review_kind: Learning,
+        },
+    ]);
 
     let revlog_vec = vec![
         RevlogEntry {
@@ -849,31 +836,28 @@ fn test_remove_revlog_before_last_first_learn() {
     ];
 
     let revlog_vec = remove_revlog_before_last_first_learn(revlog_vec);
-    assert_eq!(
-        revlog_vec,
-        vec![
-            RevlogEntry {
-                id: 1389281322102,
-                cid: 1224124699235,
-                usn: 866,
-                button_chosen: 4,
-                interval: 4,
-                last_interval: -60,
-                ease_factor: 2500,
-                taken_millis: 22559,
-                review_kind: Learning,
-            },
-            RevlogEntry {
-                id: 1389894643706,
-                cid: 1224124699235,
-                usn: 889,
-                button_chosen: 3,
-                interval: 9,
-                last_interval: 4,
-                ease_factor: 2500,
-                taken_millis: 14763,
-                review_kind: Review,
-            },
-        ]
-    );
+    assert_eq!(revlog_vec, vec![
+        RevlogEntry {
+            id: 1389281322102,
+            cid: 1224124699235,
+            usn: 866,
+            button_chosen: 4,
+            interval: 4,
+            last_interval: -60,
+            ease_factor: 2500,
+            taken_millis: 22559,
+            review_kind: Learning,
+        },
+        RevlogEntry {
+            id: 1389894643706,
+            cid: 1224124699235,
+            usn: 889,
+            button_chosen: 3,
+            interval: 9,
+            last_interval: 4,
+            ease_factor: 2500,
+            taken_millis: 14763,
+            review_kind: Review,
+        },
+    ]);
 }

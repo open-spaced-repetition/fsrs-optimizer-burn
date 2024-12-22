@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
-use crate::model::{Get, MemoryStateTensors, FSRS};
+use crate::model::{FSRS, Get, MemoryStateTensors};
 use burn::nn::loss::Reduction;
 use burn::tensor::{Data, Shape, Tensor};
 use burn::{data::dataloader::batcher::Batcher, tensor::backend::Backend};
@@ -372,7 +372,7 @@ fn measure_a_by_b(pred_a: &[f32], pred_b: &[f32], true_val: &[f32]) -> f32 {
 mod tests {
     use super::*;
     use crate::{
-        convertor_tests::anki21_sample_file_converted_to_fsrs, dataset::filter_outlier, FSRSReview,
+        FSRSReview, convertor_tests::anki21_sample_file_converted_to_fsrs, dataset::filter_outlier,
     };
 
     static PARAMETERS: &[f32] = &[
@@ -403,15 +403,12 @@ mod tests {
     fn test_get_bin() {
         let pred = (0..=100).map(|i| i as f32 / 100.0).collect::<Vec<_>>();
         let bin = pred.iter().map(|p| get_bin(*p, 20)).collect::<Vec<_>>();
-        assert_eq!(
-            bin,
-            [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4,
-                4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10,
-                11, 11, 11, 12, 12, 13, 13, 14, 14, 14, 15, 15, 16, 17, 17, 18, 18, 19, 19
-            ]
-        );
+        assert_eq!(bin, [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+            4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11,
+            12, 12, 13, 13, 14, 14, 14, 15, 15, 16, 17, 17, 18, 18, 19, 19
+        ]);
     }
 
     #[test]
@@ -441,13 +438,10 @@ mod tests {
             ],
         };
         let fsrs = FSRS::new(Some(PARAMETERS))?;
-        assert_eq!(
-            fsrs.memory_state(item, None).unwrap(),
-            MemoryState {
-                stability: 31.722975,
-                difficulty: 7.382128
-            }
-        );
+        assert_eq!(fsrs.memory_state(item, None).unwrap(), MemoryState {
+            stability: 31.722975,
+            difficulty: 7.382128
+        });
 
         assert_eq!(
             fsrs.next_states(
@@ -593,25 +587,21 @@ mod tests {
     fn memory_from_sm2() -> Result<()> {
         let fsrs = FSRS::new(Some(&[]))?;
         let memory_state = fsrs.memory_state_from_sm2(2.5, 10.0, 0.9).unwrap();
-        assert_approx_eq(
-            [memory_state.stability, memory_state.difficulty],
-            [9.999996, 7.079161],
-        );
+        assert_approx_eq([memory_state.stability, memory_state.difficulty], [
+            9.999996, 7.079161,
+        ]);
         let memory_state = fsrs.memory_state_from_sm2(2.5, 10.0, 0.8).unwrap();
-        assert_approx_eq(
-            [memory_state.stability, memory_state.difficulty],
-            [4.170096, 9.323614],
-        );
+        assert_approx_eq([memory_state.stability, memory_state.difficulty], [
+            4.170096, 9.323614,
+        ]);
         let memory_state = fsrs.memory_state_from_sm2(2.5, 10.0, 0.95).unwrap();
-        assert_approx_eq(
-            [memory_state.stability, memory_state.difficulty],
-            [21.712555, 2.174237],
-        );
+        assert_approx_eq([memory_state.stability, memory_state.difficulty], [
+            21.712555, 2.174237,
+        ]);
         let memory_state = fsrs.memory_state_from_sm2(1.3, 20.0, 0.9).unwrap();
-        assert_approx_eq(
-            [memory_state.stability, memory_state.difficulty],
-            [19.999992, 10.0],
-        );
+        assert_approx_eq([memory_state.stability, memory_state.difficulty], [
+            19.999992, 10.0,
+        ]);
         let interval = 15;
         let ease_factor = 2.0;
         let fsrs_factor = fsrs

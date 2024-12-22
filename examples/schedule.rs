@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, Utc};
-use fsrs::{MemoryState, FSRS};
+use fsrs::{FSRS, MemoryState};
 
 struct Card {
     due: DateTime<Utc>,
