@@ -7,13 +7,12 @@ use burn::backend::NdArray;
 use burn::{
     config::Config,
     module::{Module, Param},
-    tensor::{backend::Backend, Data, Shape, Tensor},
+    tensor::{backend::Backend, Shape, Tensor, TensorData},
 };
 
 #[derive(Module, Debug)]
 pub struct Model<B: Backend> {
     pub w: Param<Tensor<B, 1>>,
-    pub config: ModelConfig,
 }
 
 pub(crate) trait Get<B: Backend, const N: usize> {
@@ -23,18 +22,6 @@ pub(crate) trait Get<B: Backend, const N: usize> {
 impl<B: Backend, const N: usize> Get<B, N> for Tensor<B, N> {
     fn get(&self, n: usize) -> Self {
         self.clone().slice([n..(n + 1)])
-    }
-}
-
-trait Pow<B: Backend, const N: usize> {
-    // https://github.com/burn-rs/burn/issues/590 , after that finished, just remove this trait and below impl, all will ok.
-    fn pow(&self, other: Tensor<B, N>) -> Tensor<B, N>;
-}
-
-impl<B: Backend, const N: usize> Pow<B, N> for Tensor<B, N> {
-    fn pow(&self, other: Self) -> Self {
-        // a ^ b => exp(ln(a^b)) => exp(b ln (a))
-        (self.clone().log() * other).exp()
     }
 }
 
@@ -50,10 +37,9 @@ impl<B: Backend> Model<B> {
 
         Self {
             w: Param::from_tensor(Tensor::from_floats(
-                Data::new(initial_params, Shape { dims: [19] }),
+                TensorData::new(initial_params, Shape { dims: vec![19] }),
                 &B::Device::default(),
             )),
-            config,
         }
     }
 
@@ -77,7 +63,7 @@ impl<B: Backend> Model<B> {
         last_s.clone()
             * (self.w.get(8).exp()
                 * (-last_d + 11)
-                * (last_s.pow(-self.w.get(9)))
+                * (last_s.powf(-self.w.get(9)))
                 * (((-r + 1) * self.w.get(10)).exp() - 1)
                 * hard_penalty
                 * easy_bonus
@@ -91,8 +77,8 @@ impl<B: Backend> Model<B> {
         r: Tensor<B, 1>,
     ) -> Tensor<B, 1> {
         let new_s = self.w.get(11)
-            * last_d.pow(-self.w.get(12))
-            * ((last_s.clone() + 1).pow(self.w.get(13)) - 1)
+            * last_d.powf(-self.w.get(12))
+            * ((last_s.clone() + 1).powf(self.w.get(13)) - 1)
             * ((-r + 1) * self.w.get(14)).exp();
         let new_s_min = last_s / (self.w.get(17) * self.w.get(18)).exp();
         new_s
@@ -196,7 +182,7 @@ pub(crate) struct MemoryStateTensors<B: Backend> {
     pub difficulty: Tensor<B, 1>,
 }
 
-#[derive(Config, Module, Debug, Default)]
+#[derive(Config, Debug, Default)]
 pub struct ModelConfig {
     #[config(default = false)]
     pub freeze_stability: bool,
@@ -257,7 +243,7 @@ pub(crate) fn parameters_to_model<B: Backend>(parameters: &Parameters) -> Model<
     let config = ModelConfig::default();
     let mut model = Model::new(config);
     model.w = Param::from_tensor(Tensor::from_floats(
-        Data::new(clip_parameters(parameters), Shape { dims: [19] }),
+        TensorData::new(clip_parameters(parameters), Shape { dims: vec![19] }),
         &B::Device::default(),
     ));
     model
@@ -287,12 +273,15 @@ pub(crate) fn check_and_fill_parameters(parameters: &Parameters) -> Result<Vec<f
 mod tests {
     use super::*;
     use crate::test_helpers::{Model, Tensor};
-    use burn::tensor::Data;
+    use burn::tensor::TensorData;
 
     #[test]
     fn w() {
         let model = Model::new(ModelConfig::default());
-        assert_eq!(model.w.val().to_data(), Data::from(DEFAULT_PARAMETERS))
+        assert_eq!(
+            model.w.val().to_data(),
+            TensorData::from(DEFAULT_PARAMETERS)
+        )
     }
 
     #[test]
@@ -318,10 +307,11 @@ mod tests {
         let delta_t = Tensor::from_floats([0.0, 1.0, 2.0, 3.0, 4.0, 5.0], &device);
         let stability = Tensor::from_floats([1.0, 2.0, 3.0, 4.0, 4.0, 2.0], &device);
         let retention = model.power_forgetting_curve(delta_t, stability);
-        assert_eq!(
-            retention.to_data(),
-            Data::from([1.0, 0.946059, 0.9299294, 0.9221679, 0.90000004, 0.79394597])
-        )
+
+        retention.to_data().assert_approx_eq(
+            &TensorData::from([1.0, 0.946059, 0.9299294, 0.9221679, 0.90000004, 0.79394597]),
+            5,
+        );
     }
 
     #[test]
@@ -332,7 +322,7 @@ mod tests {
         let stability = model.init_stability(rating);
         assert_eq!(
             stability.to_data(),
-            Data::from([
+            TensorData::from([
                 DEFAULT_PARAMETERS[0],
                 DEFAULT_PARAMETERS[1],
                 DEFAULT_PARAMETERS[2],
@@ -351,7 +341,7 @@ mod tests {
         let difficulty = model.init_difficulty(rating);
         assert_eq!(
             difficulty.to_data(),
-            Data::from([
+            TensorData::from([
                 DEFAULT_PARAMETERS[4],
                 DEFAULT_PARAMETERS[4] - DEFAULT_PARAMETERS[5].exp() + 1.0,
                 DEFAULT_PARAMETERS[4] - (2.0 * DEFAULT_PARAMETERS[5]).exp() + 1.0,
@@ -401,16 +391,15 @@ mod tests {
         let rating = Tensor::from_floats([1.0, 2.0, 3.0, 4.0], &device);
         let next_difficulty = model.next_difficulty(difficulty, rating);
         next_difficulty.clone().backward();
-        assert_eq!(
-            next_difficulty.to_data(),
-            Data::from([6.622667, 5.811333, 5.0, 4.188667])
-        );
+        next_difficulty
+            .to_data()
+            .assert_approx_eq(&TensorData::from([6.622667, 5.811333, 5.0, 4.188667]), 5);
         let next_difficulty = model.mean_reversion(next_difficulty);
         next_difficulty.clone().backward();
-        assert_eq!(
-            next_difficulty.to_data(),
-            Data::from([6.607035, 5.7994337, 4.9918327, 4.1842318])
-        )
+        next_difficulty.to_data().assert_approx_eq(
+            &TensorData::from([6.607035, 5.7994337, 4.9918327, 4.1842318]),
+            5,
+        );
     }
 
     #[test]
@@ -428,27 +417,27 @@ mod tests {
             rating.clone(),
         );
         s_recall.clone().backward();
-        assert_eq!(
-            s_recall.to_data(),
-            Data::from([25.77614, 14.121894, 60.40441, 208.97597])
+        s_recall.to_data().assert_approx_eq(
+            &TensorData::from([25.77614, 14.121894, 60.40441, 208.97597]),
+            5,
         );
         let s_forget = model.stability_after_failure(stability.clone(), difficulty, retention);
         s_forget.clone().backward();
-        assert_eq!(
-            s_forget.to_data(),
-            Data::from([1.7028502, 1.9798818, 2.3759942, 2.8885393])
+        s_forget.to_data().assert_approx_eq(
+            &TensorData::from([1.7028502, 1.9798818, 2.3759942, 2.8885393]),
+            5,
         );
         let next_stability = s_recall.mask_where(rating.clone().equal_elem(1), s_forget);
         next_stability.clone().backward();
-        assert_eq!(
-            next_stability.to_data(),
-            Data::from([1.7028502, 14.121894, 60.40441, 208.97597])
+        next_stability.to_data().assert_approx_eq(
+            &TensorData::from([1.7028502, 14.121894, 60.40441, 208.97597]),
+            5,
         );
         let next_stability = model.stability_short_term(stability, rating);
-        assert_eq!(
-            next_stability.to_data(),
-            Data::from([2.5051427, 4.199207, 7.038856, 11.798775])
-        )
+        next_stability.to_data().assert_approx_eq(
+            &TensorData::from([2.5051427, 4.199207, 7.038856, 11.798775]),
+            5,
+        );
     }
 
     #[test]

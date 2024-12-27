@@ -279,7 +279,7 @@ pub(crate) fn smooth_and_fill(
 
 #[cfg(test)]
 mod tests {
-    use burn::tensor::Data;
+    use burn::tensor::TensorData;
 
     use super::*;
     use crate::dataset::filter_outlier;
@@ -342,8 +342,8 @@ mod tests {
             ],
         )]);
         let actual = search_parameters(pretrainset, 0.943_028_57);
-        Data::from([*actual.get(&first_rating).unwrap()])
-            .assert_approx_eq(&Data::from([0.908_688]), 6);
+        TensorData::from([*actual.get(&first_rating).unwrap()])
+            .assert_approx_eq(&TensorData::from([0.908_688]), 6);
     }
 
     #[test]
@@ -356,8 +356,10 @@ mod tests {
         (pretrainset, trainset) = filter_outlier(pretrainset, trainset);
         let items = [pretrainset.clone(), trainset].concat();
         let average_recall = calculate_average_recall(&items);
-        Data::from(pretrain(pretrainset, average_recall).unwrap().0)
-            .assert_approx_eq(&Data::from([0.908_688, 1.678_973, 4.216_837, 9.615_904]), 6)
+        TensorData::from(pretrain(pretrainset, average_recall).unwrap().0).assert_approx_eq(
+            &TensorData::from([0.908_688, 1.678_973, 4.216_837, 9.615_904]),
+            6,
+        )
     }
 
     #[test]

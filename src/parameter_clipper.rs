@@ -4,21 +4,18 @@ use crate::{
 };
 use burn::{
     module::Param,
-    tensor::{backend::Backend, Data, Tensor},
+    tensor::{backend::Backend, Tensor, TensorData},
 };
 
 pub(crate) fn parameter_clipper<B: Backend>(
     parameters: Param<Tensor<B, 1>>,
 ) -> Param<Tensor<B, 1>> {
     let (id, val) = parameters.consume();
-    let clipped = clip_parameters(&val.to_data().convert().value);
+    let clipped = clip_parameters(&val.to_data().to_vec().unwrap());
     Param::initialized(
         id,
-        Tensor::from_data(
-            Data::new(clipped, val.shape()).convert(),
-            &B::Device::default(),
-        )
-        .require_grad(),
+        Tensor::from_data(TensorData::new(clipped, val.shape()), &B::Device::default())
+            .require_grad(),
     )
 }
 
@@ -69,7 +66,7 @@ mod tests {
         );
 
         let param = parameter_clipper(Param::from_tensor(tensor));
-        let values = &param.to_data().value;
+        let values = &param.to_data().to_vec::<f32>().unwrap();
 
         assert_eq!(
             values,

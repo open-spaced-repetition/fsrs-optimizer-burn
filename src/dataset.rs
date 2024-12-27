@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use burn::data::dataloader::batcher::Batcher;
 use burn::{
     data::dataset::Dataset,
-    tensor::{backend::Backend, Data, ElementConversion, Float, Int, Shape, Tensor},
+    tensor::{backend::Backend, Float, Int, Shape, Tensor, TensorData},
 };
 
 use itertools::Itertools;
@@ -106,24 +106,22 @@ impl<B: Backend> Batcher<FSRSItem, FSRSBatch<B>> for FSRSBatcher<B> {
                     item.history().map(|r| (r.delta_t, r.rating)).unzip();
                 delta_t.resize(pad_size, 0);
                 rating.resize(pad_size, 0);
-                let delta_t = Tensor::from_data(
-                    Data::new(
+                let delta_t = Tensor::<B, 2>::from_floats(
+                    TensorData::new(
                         delta_t,
                         Shape {
-                            dims: [1, pad_size],
+                            dims: vec![1, pad_size],
                         },
-                    )
-                    .convert(),
+                    ),
                     &self.device,
                 );
-                let rating = Tensor::from_data(
-                    Data::new(
+                let rating = Tensor::<B, 2>::from_data(
+                    TensorData::new(
                         rating,
                         Shape {
-                            dims: [1, pad_size],
+                            dims: vec![1, pad_size],
                         },
-                    )
-                    .convert(),
+                    ),
                     &self.device,
                 );
                 (delta_t, rating)
@@ -134,12 +132,12 @@ impl<B: Backend> Batcher<FSRSItem, FSRSBatch<B>> for FSRSBatcher<B> {
             .iter()
             .map(|item| {
                 let current = item.current();
-                let delta_t = Tensor::from_data(Data::from([current.delta_t.elem()]), &self.device);
+                let delta_t = Tensor::<B, 1>::from_floats([current.delta_t], &self.device);
                 let label = match current.rating {
-                    1 => 0.0,
-                    _ => 1.0,
+                    1 => 0,
+                    _ => 1,
                 };
-                let label = Tensor::from_data(Data::from([label.elem()]), &self.device);
+                let label = Tensor::<B, 1, Int>::from_ints([label], &self.device);
                 (delta_t, label)
             })
             .unzip();
@@ -436,29 +434,33 @@ mod tests {
             },
         ];
         let batch = batcher.batch(items);
-        assert_eq!(
-            batch.t_historys.to_data(),
-            Data::from([
+        batch.t_historys.to_data().assert_approx_eq(
+            &TensorData::from([
                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                 [0.0, 5.0, 0.0, 2.0, 2.0, 2.0, 0.0, 1.0],
                 [0.0, 0.0, 0.0, 0.0, 6.0, 6.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 16.0, 0.0, 0.0]
-            ])
+                [0.0, 0.0, 0.0, 0.0, 0.0, 16.0, 0.0, 0.0],
+            ]),
+            5,
         );
-        assert_eq!(
-            batch.r_historys.to_data(),
-            Data::from([
+        batch.r_historys.to_data().assert_approx_eq(
+            &TensorData::from([
                 [4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 1.0, 1.0],
                 [0.0, 3.0, 0.0, 3.0, 3.0, 3.0, 0.0, 1.0],
                 [0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0]
-            ])
+                [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0],
+            ]),
+            5,
         );
-        assert_eq!(
-            batch.delta_ts.to_data(),
-            Data::from([5.0, 11.0, 2.0, 6.0, 16.0, 39.0, 1.0, 1.0])
+
+        batch.delta_ts.to_data().assert_approx_eq(
+            &TensorData::from([5.0, 11.0, 2.0, 6.0, 16.0, 39.0, 1.0, 1.0]),
+            5,
         );
-        assert_eq!(batch.labels.to_data(), Data::from([1, 1, 1, 1, 1, 1, 0, 1]));
+        batch
+            .labels
+            .to_data()
+            .assert_approx_eq(&TensorData::from([1, 1, 1, 1, 1, 1, 0, 1]), 5);
     }
 
     #[test]

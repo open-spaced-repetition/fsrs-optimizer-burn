@@ -20,8 +20,8 @@ impl CosineAnnealingLR {
     }
 }
 
-impl<B: Backend> LrScheduler<B> for CosineAnnealingLR {
-    type Record = usize;
+impl LrScheduler for CosineAnnealingLR {
+    type Record<B: Backend> = usize;
 
     fn step(&mut self) -> LearningRate {
         self.step_count += 1.0;
@@ -52,11 +52,11 @@ impl<B: Backend> LrScheduler<B> for CosineAnnealingLR {
         self.current_lr
     }
 
-    fn to_record(&self) -> Self::Record {
+    fn to_record<B: Backend>(&self) -> Self::Record<B> {
         self.step_count as usize
     }
 
-    fn load_record(mut self, record: Self::Record) -> Self {
+    fn load_record<B: Backend>(mut self, record: Self::Record<B>) -> Self {
         self.step_count = record as LearningRate;
         self
     }
@@ -65,8 +65,7 @@ impl<B: Backend> LrScheduler<B> for CosineAnnealingLR {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use burn::{backend::NdArray, tensor::Data};
-    type Backend = NdArray<f32>;
+    use burn::tensor::TensorData;
 
     #[test]
     fn lr_scheduler() {
@@ -74,14 +73,14 @@ mod tests {
 
         let lrs = (0..=200000)
             .map(|_| {
-                LrScheduler::<Backend>::step(&mut lr_scheduler);
+                LrScheduler::step(&mut lr_scheduler);
                 lr_scheduler.current_lr
             })
             .step_by(20000)
             .collect::<Vec<_>>();
 
-        Data::from(&lrs[..]).assert_approx_eq(
-            &Data::from([
+        TensorData::from(&lrs[..]).assert_approx_eq(
+            &TensorData::from([
                 0.1,
                 0.09045084971874785,
                 0.06545084971874875,
